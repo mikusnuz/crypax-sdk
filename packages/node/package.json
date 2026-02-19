@@ -1,6 +1,6 @@
 {
   "name": "@crypax/node",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Crypax server-side SDK for Node.js",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -13,7 +13,9 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch"
@@ -28,7 +30,14 @@
   "publishConfig": {
     "access": "public"
   },
-  "keywords": ["crypax", "payment", "crypto", "node", "server", "sdk"],
+  "keywords": [
+    "crypax",
+    "payment",
+    "crypto",
+    "node",
+    "server",
+    "sdk"
+  ],
   "devDependencies": {
     "@types/node": "^22.0.0",
     "tsup": "^8.0.0",

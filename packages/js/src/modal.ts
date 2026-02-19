@@ -28,6 +28,11 @@ let currentLocale: Locale = 'ko'
 let currentTheme: 'light' | 'dark' | 'auto' = 'auto'
 let currentConfig: ModalConfig | null = null
 let handlers: Partial<ModalHandlers> = {}
+let currentPaymentStatus: PaymentStatus | null = null
+
+const UNCLOSABLE_STATUSES: PaymentStatus[] = [
+  'connecting', 'switching_chain', 'awaiting_approval', 'submitted', 'waiting_direct',
+]
 
 const STYLES = `
   :host {
@@ -312,7 +317,32 @@ const STYLES = `
     font-size: 28px;
   }
 
-  .icon-success { background: rgba(16,185,129,0.1); }
+  @keyframes scaleIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes checkDraw {
+    from { stroke-dashoffset: 24; }
+    to { stroke-dashoffset: 0; }
+  }
+
+  .icon-success { background: rgba(16,185,129,0.1); animation: scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+
+  .icon-success svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .icon-success svg path {
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+    animation: checkDraw 0.4s ease 0.3s forwards;
+  }
+
+  .confirmed-title {
+    animation: scaleIn 0.3s ease 0.2s both;
+  }
   .icon-error { background: rgba(239,68,68,0.1); }
   .icon-cancel { background: rgba(107,114,128,0.1); }
   .icon-expired { background: rgba(245,158,11,0.1); }
@@ -719,8 +749,12 @@ function renderConfirmed(txHash?: string, blockNumber?: number): string {
   const cfg = currentConfig!
   return `
     <div class="status-center">
-      <div class="status-icon icon-success">✅</div>
-      <p class="status-title">${t(locale, 'confirmed')}</p>
+      <div class="status-icon icon-success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <p class="status-title confirmed-title">${t(locale, 'confirmed')}</p>
       ${blockNumber ? `<p class="status-sub">Block #${blockNumber}</p>` : ''}
       ${txHash ? `<a class="tx-link" href="${cfg.explorerUrl}/tx/${txHash}" target="_blank" rel="noopener">${t(locale, 'view_tx')} ↗</a>` : ''}
     </div>
@@ -873,8 +907,12 @@ export function showModal(
 
   shadow.appendChild(wrapper)
 
-  wrapper.querySelector('#modal-close-btn')?.addEventListener('click', () => handlers.onClose?.())
+  wrapper.querySelector('#modal-close-btn')?.addEventListener('click', () => {
+    if (currentPaymentStatus && UNCLOSABLE_STATUSES.includes(currentPaymentStatus)) return
+    handlers.onClose?.()
+  })
   wrapper.querySelector('#overlay')?.addEventListener('click', (e) => {
+    if (currentPaymentStatus && UNCLOSABLE_STATUSES.includes(currentPaymentStatus)) return
     if (e.target === wrapper.querySelector('#overlay')) handlers.onClose?.()
   })
 
@@ -888,6 +926,15 @@ export function updateStatus(
   const body = getModalBody()
   if (!body) return
   const locale = currentLocale
+  currentPaymentStatus = status
+
+  // Hide/show close button based on status
+  const closeBtn = shadow?.querySelector('#modal-close-btn') as HTMLElement | null
+  if (closeBtn) {
+    const hide = UNCLOSABLE_STATUSES.includes(status)
+    closeBtn.style.visibility = hide ? 'hidden' : 'visible'
+    closeBtn.style.pointerEvents = hide ? 'none' : 'auto'
+  }
 
   switch (status) {
     case 'connecting':
@@ -925,6 +972,7 @@ export function updateStatus(
 }
 
 export function hideModal(): void {
+  currentPaymentStatus = null
   const wrapper = shadow?.querySelector('.theme-wrapper') as HTMLElement | null
   if (wrapper) {
     wrapper.style.opacity = '0'

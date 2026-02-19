@@ -122,8 +122,16 @@ export class Crypax {
 
     return new Promise<PaymentResult>((resolve) => {
       const finish = (result: PaymentResult) => {
-        setTimeout(() => hideModal(), result.status === 'confirmed' ? 2000 : 0)
-        resolve(result)
+        if (result.status === 'confirmed') {
+          // Show success state for 3.5s before closing so user can clearly see the confirmation
+          setTimeout(() => {
+            hideModal()
+            resolve(result)
+          }, 3500)
+        } else {
+          hideModal()
+          resolve(result)
+        }
       }
 
       const handleClose = () => {
