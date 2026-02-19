@@ -92,8 +92,8 @@ export async function switchChain(params: SwitchChainParams): Promise<void> {
             rpcUrls: [params.rpcUrl],
             blockExplorerUrls: [params.explorerUrl],
             nativeCurrency: {
-              name: params.symbol ?? 'ETH',
-              symbol: params.symbol ?? 'ETH',
+              name: params.symbol ?? 'PLM',
+              symbol: params.symbol ?? 'PLM',
               decimals: params.decimals ?? 18,
             },
           },
