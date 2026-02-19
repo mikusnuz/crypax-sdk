@@ -29,6 +29,7 @@ export interface Payment {
   currency: string
   recipientAddress: string
   status: string
+  paymentMethod?: 'wallet' | 'direct' | null
   txHash?: string | null
   senderAddress?: string | null
   blockNumber?: number | null

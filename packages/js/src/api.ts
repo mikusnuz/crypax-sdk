@@ -39,6 +39,19 @@ export class CrypaxApiClient {
     }
   }
 
+  async watchPayment(paymentId: string, clientSecret: string): Promise<void> {
+    const url = `${this.apiUrl}/v1/payments/${paymentId}/watch`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ clientSecret }),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Failed to watch payment (${res.status}): ${text}`)
+    }
+  }
+
   async pollPaymentStatus(
     paymentId: string,
     clientSecret: string,

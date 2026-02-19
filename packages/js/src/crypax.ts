@@ -6,6 +6,7 @@ import type {
   WalletInfo,
   CrypaxEventType,
   BackendPaymentInfo,
+  PaymentMethod,
 } from './types'
 import { buildDefaultConfig, PEXUS_CHROME_STORE_URL, BACKEND_POLL_INTERVAL_MS, BACKEND_POLL_TIMEOUT_MS } from './constants'
 import { CrypaxApiClient } from './api'
@@ -23,6 +24,8 @@ import {
   updateStatus,
   hideModal,
   destroyModal,
+  showDirectPayment,
+  updateModalBody,
 } from './modal'
 
 export class Crypax {
@@ -104,6 +107,7 @@ export class Crypax {
       explorerUrl: cfg.explorerUrl,
       chainName: cfg.chainName,
       currencySymbol: cfg.nativeCurrency.symbol,
+      chainId: cfg.chainId,
     })
 
     return new Promise<PaymentResult>((resolve) => {
@@ -118,7 +122,7 @@ export class Crypax {
         resolve({ status: 'cancelled', paymentId })
       }
 
-      const handlePayWithWallet = async () => {
+      const handleWalletPayment = async () => {
         try {
           this.setStatus('connecting')
           const address = await connectWallet()
@@ -172,7 +176,7 @@ export class Crypax {
           )
 
           if (finalInfo.status === 'confirmed') {
-            const blockNumber = (finalInfo as unknown as { blockNumber?: number }).blockNumber
+            const blockNumber = finalInfo.blockNumber ?? undefined
             this.emit('tx_confirmed', { txHash, blockNumber })
             this.setStatus('confirmed', { txHash, blockNumber })
             finish({ status: 'confirmed', paymentId, txHash, blockNumber })
@@ -200,30 +204,74 @@ export class Crypax {
         }
       }
 
-      const handleInstallPexus = () => {
-        window.open(PEXUS_CHROME_STORE_URL, '_blank', 'noopener')
+      const handleDirectPayment = async () => {
+        try {
+          await this.api.watchPayment(paymentId, clientSecret)
+          showDirectPayment(paymentInfo)
+
+          const finalInfo = await this.api.pollPaymentStatus(
+            paymentId,
+            clientSecret,
+            BACKEND_POLL_TIMEOUT_MS,
+            BACKEND_POLL_INTERVAL_MS,
+          )
+
+          if (finalInfo.status === 'confirmed') {
+            const blockNumber = finalInfo.blockNumber ?? undefined
+            const txHash = finalInfo.txHash ?? undefined
+            this.emit('tx_confirmed', { txHash, blockNumber })
+            this.setStatus('confirmed', { txHash, blockNumber })
+            finish({ status: 'confirmed', paymentId, txHash, blockNumber })
+          } else if (finalInfo.status === 'failed') {
+            this.setStatus('failed', { error: 'Transaction failed' })
+            finish({ status: 'failed', paymentId, error: 'Transaction failed' })
+          } else if (finalInfo.status === 'expired') {
+            this.setStatus('expired')
+            finish({ status: 'expired', paymentId })
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err)
+          this.emit('error', { error: msg })
+          this.setStatus('failed', { error: msg })
+        }
       }
 
-      const handleOtherWallet = () => {
-        handlePayWithWallet()
+      const handleSelectMethod = (method: PaymentMethod) => {
+        switch (method) {
+          case 'pexus':
+            if (walletInfo.type !== 'pexus') {
+              window.open(PEXUS_CHROME_STORE_URL, '_blank', 'noopener')
+              return
+            }
+            handleWalletPayment()
+            break
+          case 'wallet':
+            handleWalletPayment()
+            break
+          case 'direct':
+            handleDirectPayment()
+            break
+        }
+      }
+
+      const handleBack = () => {
+        updateModalBody(paymentInfo, walletInfo)
       }
 
       const handleRetry = () => {
         showModal(paymentInfo, walletInfo, {
-          onPayWithWallet: handlePayWithWallet,
-          onInstallPexus: handleInstallPexus,
-          onOtherWallet: handleOtherWallet,
+          onSelectMethod: handleSelectMethod,
           onClose: handleClose,
           onRetry: handleRetry,
+          onBack: handleBack,
         })
       }
 
       showModal(paymentInfo, walletInfo, {
-        onPayWithWallet: handlePayWithWallet,
-        onInstallPexus: handleInstallPexus,
-        onOtherWallet: handleOtherWallet,
+        onSelectMethod: handleSelectMethod,
         onClose: handleClose,
         onRetry: handleRetry,
+        onBack: handleBack,
       })
     })
   }

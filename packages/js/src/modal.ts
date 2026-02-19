@@ -1,6 +1,7 @@
-import type { PaymentStatus, BackendPaymentInfo, WalletInfo } from './types'
+import type { PaymentStatus, BackendPaymentInfo, WalletInfo, PaymentMethod } from './types'
 import type { Locale } from './i18n'
 import { t } from './i18n'
+import { generateQrSvg, buildEip681Uri, toWeiString } from './qr'
 
 interface ModalConfig {
   theme: 'light' | 'dark' | 'auto'
@@ -8,14 +9,14 @@ interface ModalConfig {
   explorerUrl: string
   chainName: string
   currencySymbol: string
+  chainId: number
 }
 
 interface ModalHandlers {
-  onPayWithWallet: () => void
-  onInstallPexus: () => void
-  onOtherWallet: () => void
+  onSelectMethod: (method: PaymentMethod) => void
   onClose: () => void
   onRetry: () => void
+  onBack: () => void
 }
 
 let host: HTMLElement | null = null
@@ -358,6 +359,212 @@ const STYLES = `
 
   .light .powered-link { color: #7c3aed; }
   .dark .powered-link { color: #a78bfa; }
+
+  .method-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .method-btn {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.15s;
+    border: none;
+    text-align: left;
+  }
+
+  .method-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .method-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .method-btn-pexus {
+    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    color: white;
+  }
+
+  .method-btn-pexus:hover:not(:disabled) {
+    box-shadow: 0 8px 24px rgba(124,58,237,0.35);
+  }
+
+  .light .method-btn-wallet {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+  }
+
+  .light .method-btn-wallet:hover:not(:disabled) { background: #e5e7eb; }
+
+  .dark .method-btn-wallet {
+    background: rgba(255,255,255,0.06);
+    color: #e5e7eb;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .dark .method-btn-wallet:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+
+  .light .method-btn-direct {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+  }
+
+  .light .method-btn-direct:hover:not(:disabled) { background: #e5e7eb; }
+
+  .dark .method-btn-direct {
+    background: rgba(255,255,255,0.06);
+    color: #e5e7eb;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .dark .method-btn-direct:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+
+  .method-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .icon-pexus { background: rgba(255,255,255,0.2); }
+
+  .light .icon-wallet { background: #e5e7eb; }
+  .dark .icon-wallet { background: rgba(255,255,255,0.1); }
+
+  .light .icon-direct { background: #e5e7eb; }
+  .dark .icon-direct { background: rgba(255,255,255,0.1); }
+
+  .method-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .method-title { font-size: 14px; font-weight: 600; }
+
+  .method-sub {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.65;
+  }
+
+  .qr-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 0;
+  }
+
+  .qr-box {
+    border-radius: 16px;
+    padding: 16px;
+    display: inline-flex;
+  }
+
+  .light .qr-box { background: #ffffff; border: 1px solid #e5e7eb; }
+  .dark .qr-box { background: #ffffff; border: 1px solid rgba(255,255,255,0.1); }
+
+  .addr-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .addr-text {
+    flex: 1;
+    font-family: monospace;
+    font-size: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    word-break: break-all;
+    user-select: all;
+  }
+
+  .light .addr-text { background: #f3f4f6; color: #374151; }
+  .dark .addr-text { background: rgba(255,255,255,0.06); color: #e5e7eb; }
+
+  .copy-btn {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  .light .copy-btn { background: #e5e7eb; color: #374151; }
+  .light .copy-btn:hover { background: #d1d5db; }
+  .dark .copy-btn { background: rgba(255,255,255,0.1); color: #e5e7eb; }
+  .dark .copy-btn:hover { background: rgba(255,255,255,0.15); }
+
+  .waiting-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 10px;
+  }
+
+  .light .waiting-badge { background: #fef3c7; color: #92400e; }
+  .dark .waiting-badge { background: rgba(245,158,11,0.15); color: #fbbf24; }
+
+  .waiting-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  .waiting-sub {
+    font-size: 12px;
+    opacity: 0.5;
+    text-align: center;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 8px 0;
+    transition: opacity 0.15s;
+  }
+
+  .light .back-link { color: #6b7280; }
+  .dark .back-link { color: #9ca3af; }
+  .back-link:hover { opacity: 0.7; }
 `
 
 function getThemeClass(theme: 'light' | 'dark' | 'auto'): 'light' | 'dark' {
@@ -400,32 +607,65 @@ function buildPaymentInfoBlock(info: BackendPaymentInfo): string {
   return `<div class="payment-info">${rows.join('')}</div>`
 }
 
-function renderWalletAvailable(info: BackendPaymentInfo, walletInfo: WalletInfo): string {
+function renderMethodSelection(info: BackendPaymentInfo, walletInfo: WalletInfo): string {
   const locale = currentLocale
-  const walletName =
-    walletInfo.type === 'pexus' ? 'Pexus'
-    : walletInfo.type === 'metamask' ? 'MetaMask'
-    : 'Wallet'
+
+  const hasPexus = walletInfo.type === 'pexus'
+  const hasWallet = walletInfo.type !== 'none'
 
   return `
     ${buildPaymentInfoBlock(info)}
-    <button class="btn btn-primary" id="pay-wallet-btn">
-      ${t(locale, 'pay_with', { wallet: walletName })}
-    </button>
+    <div class="method-list">
+      <button class="method-btn method-btn-pexus" id="method-pexus" ${!hasPexus ? 'disabled' : ''}>
+        <span class="method-icon icon-pexus">🟣</span>
+        <span class="method-text">
+          <span class="method-title">${t(locale, 'pay_with_pexus')}</span>
+          ${!hasPexus ? `<span class="method-sub">${t(locale, 'pexus_not_installed')}</span>` : ''}
+        </span>
+      </button>
+      <button class="method-btn method-btn-wallet" id="method-wallet" ${!hasWallet ? 'disabled' : ''}>
+        <span class="method-icon icon-wallet">🦊</span>
+        <span class="method-text">
+          <span class="method-title">${t(locale, 'wallet_payment')}</span>
+          ${!hasWallet ? `<span class="method-sub">${t(locale, 'wallet_not_detected')}</span>` : ''}
+        </span>
+      </button>
+      <button class="method-btn method-btn-direct" id="method-direct">
+        <span class="method-icon icon-direct">📱</span>
+        <span class="method-text">
+          <span class="method-title">${t(locale, 'direct_payment')}</span>
+          <span class="method-sub">${t(locale, 'direct_payment_desc')}</span>
+        </span>
+      </button>
+    </div>
   `
 }
 
-function renderNoWallet(info: BackendPaymentInfo): string {
+function renderDirectPayment(info: BackendPaymentInfo): string {
   const locale = currentLocale
+  const cfg = currentConfig!
+  const symbol = info.currency === 'native' ? cfg.currencySymbol : info.currency
+  const weiAmount = toWeiString(info.amount)
+  const uri = buildEip681Uri(info.recipientAddress, weiAmount, cfg.chainId)
+  const qrSvg = generateQrSvg(uri, 180)
+
   return `
-    ${buildPaymentInfoBlock(info)}
-    <button class="btn btn-primary" id="install-pexus-btn">
-      ${t(locale, 'install_pexus')}
-      <span class="btn-tag">${t(locale, 'install_pexus_desc')}</span>
-    </button>
-    <button class="btn btn-secondary" id="other-wallet-btn">
-      ${t(locale, 'other_wallet')}
-    </button>
+    <div class="qr-section">
+      <p style="margin:0;font-size:14px;font-weight:600;opacity:0.85;">${t(locale, 'send_to_address')}</p>
+      <div class="qr-box">${qrSvg}</div>
+      <div class="addr-row">
+        <span class="addr-text">${info.recipientAddress}</span>
+        <button class="copy-btn" id="copy-addr-btn">${t(locale, 'copy_address')}</button>
+      </div>
+      ${buildInfoRow(t(locale, 'amount'), formatAmount(info.amount, symbol), 'amount-value')}
+      ${buildInfoRow(t(locale, 'network'), cfg.chainName)}
+      <div class="waiting-badge">
+        <span class="waiting-dot"></span>
+        ${t(locale, 'waiting_deposit')}
+      </div>
+      <p class="waiting-sub">${t(locale, 'deposit_auto_detect')}</p>
+    </div>
+    <button class="back-link" id="back-btn">← ${t(locale, 'other_method')}</button>
   `
 }
 
@@ -503,11 +743,32 @@ function attachBodyListeners(): void {
   const body = getModalBody()
   if (!body) return
 
-  body.querySelector('#pay-wallet-btn')?.addEventListener('click', () => handlers.onPayWithWallet?.())
-  body.querySelector('#install-pexus-btn')?.addEventListener('click', () => handlers.onInstallPexus?.())
-  body.querySelector('#other-wallet-btn')?.addEventListener('click', () => handlers.onOtherWallet?.())
+  // Method selection buttons
+  body.querySelector('#method-pexus')?.addEventListener('click', () => handlers.onSelectMethod?.('pexus'))
+  body.querySelector('#method-wallet')?.addEventListener('click', () => handlers.onSelectMethod?.('wallet'))
+  body.querySelector('#method-direct')?.addEventListener('click', () => handlers.onSelectMethod?.('direct'))
+
+  // Legacy buttons (for status screens)
+  body.querySelector('#pay-wallet-btn')?.addEventListener('click', () => handlers.onSelectMethod?.('pexus'))
+  body.querySelector('#install-pexus-btn')?.addEventListener('click', () => handlers.onSelectMethod?.('pexus'))
+  body.querySelector('#other-wallet-btn')?.addEventListener('click', () => handlers.onSelectMethod?.('wallet'))
   body.querySelector('#close-final-btn')?.addEventListener('click', () => handlers.onClose?.())
   body.querySelector('#retry-btn')?.addEventListener('click', () => handlers.onRetry?.())
+
+  // Copy address
+  body.querySelector('#copy-addr-btn')?.addEventListener('click', (e) => {
+    const addrEl = body.querySelector('.addr-text')
+    if (addrEl) {
+      navigator.clipboard.writeText(addrEl.textContent?.trim() || '')
+      const btn = e.target as HTMLButtonElement
+      const original = btn.textContent
+      btn.textContent = t(currentLocale, 'copied')
+      setTimeout(() => { btn.textContent = original }, 2000)
+    }
+  })
+
+  // Back button
+  body.querySelector('#back-btn')?.addEventListener('click', () => handlers.onBack?.())
 }
 
 export function createModal(config: ModalConfig): void {
@@ -526,6 +787,20 @@ export function createModal(config: ModalConfig): void {
   shadow.appendChild(style)
 
   document.body.appendChild(host)
+}
+
+export function updateModalBody(info: BackendPaymentInfo, walletInfo: WalletInfo): void {
+  const body = getModalBody()
+  if (!body) return
+  body.innerHTML = renderMethodSelection(info, walletInfo)
+  attachBodyListeners()
+}
+
+export function showDirectPayment(info: BackendPaymentInfo): void {
+  const body = getModalBody()
+  if (!body) return
+  body.innerHTML = renderDirectPayment(info)
+  attachBodyListeners()
 }
 
 export function showModal(
@@ -555,10 +830,7 @@ export function showModal(
           <button class="close-btn" id="modal-close-btn" aria-label="${t(locale, 'close')}">✕</button>
         </div>
         <div class="modal-body">
-          ${walletInfo.type !== 'none'
-            ? renderWalletAvailable(info, walletInfo)
-            : renderNoWallet(info)
-          }
+          ${renderMethodSelection(info, walletInfo)}
         </div>
         <div class="modal-footer">
           <span class="powered-link">${t(locale, 'powered_by')}</span>
@@ -597,6 +869,9 @@ export function updateStatus(
       break
     case 'submitted':
       body.innerHTML = renderProcessing(t(locale, 'waiting'), extra?.txHash)
+      break
+    case 'waiting_direct':
+      body.innerHTML = renderProcessing(t(locale, 'waiting_deposit'))
       break
     case 'confirmed':
       body.innerHTML = renderConfirmed(extra?.txHash, extra?.blockNumber)

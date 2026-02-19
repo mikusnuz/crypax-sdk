@@ -31,6 +31,10 @@ export interface BackendPaymentInfo {
   description?: string
   orderId?: string
   expiresAt: string
+  txHash?: string | null
+  blockNumber?: number | null
+  confirmedAt?: string | null
+  paymentMethod?: string
 }
 
 export type PaymentStatus =
@@ -41,10 +45,13 @@ export type PaymentStatus =
   | 'switching_chain'
   | 'awaiting_approval'
   | 'submitted'
+  | 'waiting_direct'
   | 'confirmed'
   | 'failed'
   | 'cancelled'
   | 'expired'
+
+export type PaymentMethod = 'pexus' | 'wallet' | 'direct'
 
 export interface PaymentResult {
   status: 'confirmed' | 'cancelled' | 'expired' | 'failed'
