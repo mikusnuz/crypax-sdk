@@ -118,6 +118,7 @@ export class Crypax {
       currencySymbol: symbol,
       chainId,
       decimals,
+      branding: paymentInfo.branding,
     })
 
     return new Promise<PaymentResult>((resolve) => {

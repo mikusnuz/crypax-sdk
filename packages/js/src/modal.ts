@@ -1,4 +1,4 @@
-import type { PaymentStatus, BackendPaymentInfo, WalletInfo, PaymentMethod } from './types'
+import type { PaymentStatus, BackendPaymentInfo, WalletInfo, PaymentMethod, ModalBranding } from './types'
 import type { Locale } from './i18n'
 import { t } from './i18n'
 import { generateQrSvg, buildEip681Uri, ensureWei, normalizeAmount } from './qr'
@@ -13,6 +13,7 @@ interface ModalConfig {
   currencySymbol: string
   chainId: number
   decimals: number
+  branding?: ModalBranding | null
 }
 
 interface ModalHandlers {
@@ -27,6 +28,7 @@ let shadow: ShadowRoot | null = null
 let currentLocale: Locale = 'ko'
 let currentTheme: 'light' | 'dark' | 'auto' = 'auto'
 let currentConfig: ModalConfig | null = null
+let currentBranding: ModalBranding | null = null
 let handlers: Partial<ModalHandlers> = {}
 let currentPaymentStatus: PaymentStatus | null = null
 
@@ -41,6 +43,13 @@ const STYLES = `
     font-size: 16px;
     line-height: 1.5;
     box-sizing: border-box;
+    --cp-primary-start: #7c3aed;
+    --cp-primary-end: #06b6d4;
+    --cp-light-bg: #ffffff;
+    --cp-light-text: #111827;
+    --cp-dark-bg: #1a1a2e;
+    --cp-dark-text: #f1f5f9;
+    --cp-radius: 20px;
   }
 
   *, *::before, *::after {
@@ -77,22 +86,22 @@ const STYLES = `
   .modal {
     width: 100%;
     max-width: 420px;
-    border-radius: 20px;
+    border-radius: var(--cp-radius);
     overflow: hidden;
     animation: slideUp 0.25s ease;
     position: relative;
   }
 
   .light .modal {
-    background: #ffffff;
+    background: var(--cp-light-bg);
     box-shadow: 0 24px 64px rgba(0,0,0,0.18);
-    color: #111827;
+    color: var(--cp-light-text);
   }
 
   .dark .modal {
-    background: #1a1a2e;
+    background: var(--cp-dark-bg);
     box-shadow: 0 24px 64px rgba(0,0,0,0.5);
-    color: #f1f5f9;
+    color: var(--cp-dark-text);
   }
 
   .modal-header {
@@ -112,19 +121,26 @@ const STYLES = `
     width: 28px;
     height: 28px;
     border-radius: 8px;
-    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    background: linear-gradient(135deg, var(--cp-primary-start), var(--cp-primary-end));
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-weight: 700;
     font-size: 13px;
+    overflow: hidden;
+  }
+
+  .logo-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .logo-text {
     font-weight: 700;
     font-size: 15px;
-    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    background: linear-gradient(135deg, var(--cp-primary-start), var(--cp-primary-end));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -196,7 +212,7 @@ const STYLES = `
 
   .amount-value {
     font-size: 15px;
-    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    background: linear-gradient(135deg, var(--cp-primary-start), var(--cp-primary-end));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -229,14 +245,14 @@ const STYLES = `
   .btn:last-child { margin-bottom: 0; }
 
   .btn-primary {
-    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    background: linear-gradient(135deg, var(--cp-primary-start), var(--cp-primary-end));
     color: white;
   }
 
   .btn-primary:hover {
     opacity: 0.92;
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(124,58,237,0.35);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--cp-primary-start) 35%, transparent);
   }
 
   .btn-primary:active { transform: translateY(0); }
@@ -301,8 +317,8 @@ const STYLES = `
   .spinner {
     width: 48px;
     height: 48px;
-    border: 3px solid rgba(124,58,237,0.2);
-    border-top-color: #7c3aed;
+    border: 3px solid color-mix(in srgb, var(--cp-primary-start) 20%, transparent);
+    border-top-color: var(--cp-primary-start);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -367,14 +383,14 @@ const STYLES = `
     font-size: 13px;
     font-weight: 500;
     text-decoration: none;
-    color: #7c3aed;
+    color: var(--cp-primary-start);
     padding: 8px 16px;
     border-radius: 8px;
-    background: rgba(124,58,237,0.08);
+    background: color-mix(in srgb, var(--cp-primary-start) 8%, transparent);
     transition: background 0.15s;
   }
 
-  .tx-link:hover { background: rgba(124,58,237,0.15); }
+  .tx-link:hover { background: color-mix(in srgb, var(--cp-primary-start) 15%, transparent); }
 
   .modal-footer {
     padding: 12px 20px 16px;
@@ -390,8 +406,8 @@ const STYLES = `
     font-weight: 500;
   }
 
-  .light .powered-link { color: #7c3aed; }
-  .dark .powered-link { color: #a78bfa; }
+  .light .powered-link { color: var(--cp-primary-start); }
+  .dark .powered-link { color: var(--cp-primary-start); }
 
   .method-list {
     display: flex;
@@ -424,12 +440,12 @@ const STYLES = `
   }
 
   .method-btn-pexus {
-    background: linear-gradient(135deg, #7c3aed, #06b6d4);
+    background: linear-gradient(135deg, var(--cp-primary-start), var(--cp-primary-end));
     color: white;
   }
 
   .method-btn-pexus:hover:not(:disabled) {
-    box-shadow: 0 8px 24px rgba(124,58,237,0.35);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--cp-primary-start) 35%, transparent);
   }
 
   .light .method-btn-wallet {
@@ -646,60 +662,106 @@ function buildPaymentInfoBlock(info: BackendPaymentInfo): string {
   return `<div class="payment-info">${rows.join('')}</div>`
 }
 
-function renderMethodSelection(info: BackendPaymentInfo, _walletInfo: WalletInfo): string {
-  const locale = currentLocale
-  const available = detectAvailableWallets()
+interface WalletButton {
+  id: string
+  html: string
+}
 
+function buildWalletButtons(locale: Locale): WalletButton[] {
+  const available = detectAvailableWallets()
   const hasPexus = available.has('pexus')
   const hasMetaMask = available.has('metamask')
   const hasCoinbase = available.has('coinbase')
   const hasPhantom = available.has('phantom')
 
-  return `
-    ${buildPaymentInfoBlock(info)}
-    <div class="method-list">
-      <button class="method-btn method-btn-pexus" id="method-pexus">
+  const all: WalletButton[] = [
+    {
+      id: 'pexus',
+      html: `<button class="method-btn method-btn-pexus" id="method-pexus">
         <span class="method-icon icon-pexus">${ICON_PEXUS}</span>
         <span class="method-text">
           <span class="method-title">${hasPexus ? t(locale, 'pay_with_pexus') : t(locale, 'install_pexus')}</span>
           <span class="method-sub">${t(locale, 'pexus_desc')}</span>
         </span>
-      </button>
-      <button class="method-btn method-btn-wallet" id="method-metamask" ${!hasMetaMask ? 'disabled' : ''}>
+      </button>`,
+    },
+    {
+      id: 'metamask',
+      html: `<button class="method-btn method-btn-wallet" id="method-metamask" ${!hasMetaMask ? 'disabled' : ''}>
         <span class="method-icon icon-wallet">${ICON_METAMASK}</span>
         <span class="method-text">
           <span class="method-title">${t(locale, 'pay_with_metamask')}</span>
           <span class="method-sub">${!hasMetaMask ? t(locale, 'wallet_not_installed') : t(locale, 'metamask_desc')}</span>
         </span>
-      </button>
-      <button class="method-btn method-btn-wallet" id="method-walletconnect">
+      </button>`,
+    },
+    {
+      id: 'walletconnect',
+      html: `<button class="method-btn method-btn-wallet" id="method-walletconnect">
         <span class="method-icon icon-wallet">${ICON_WALLETCONNECT}</span>
         <span class="method-text">
           <span class="method-title">${t(locale, 'pay_with_walletconnect')}</span>
           <span class="method-sub">${t(locale, 'walletconnect_desc')}</span>
         </span>
-      </button>
-      <button class="method-btn method-btn-wallet" id="method-coinbase" ${!hasCoinbase ? 'disabled' : ''}>
+      </button>`,
+    },
+    {
+      id: 'coinbase',
+      html: `<button class="method-btn method-btn-wallet" id="method-coinbase" ${!hasCoinbase ? 'disabled' : ''}>
         <span class="method-icon icon-wallet">${ICON_COINBASE}</span>
         <span class="method-text">
           <span class="method-title">${t(locale, 'pay_with_coinbase')}</span>
           <span class="method-sub">${!hasCoinbase ? t(locale, 'wallet_not_installed') : t(locale, 'coinbase_desc')}</span>
         </span>
-      </button>
-      <button class="method-btn method-btn-wallet" id="method-phantom" ${!hasPhantom ? 'disabled' : ''}>
+      </button>`,
+    },
+    {
+      id: 'phantom',
+      html: `<button class="method-btn method-btn-wallet" id="method-phantom" ${!hasPhantom ? 'disabled' : ''}>
         <span class="method-icon icon-wallet">${ICON_PHANTOM}</span>
         <span class="method-text">
           <span class="method-title">${t(locale, 'pay_with_phantom')}</span>
           <span class="method-sub">${!hasPhantom ? t(locale, 'wallet_not_installed') : t(locale, 'phantom_desc')}</span>
         </span>
-      </button>
-      <button class="method-btn method-btn-direct" id="method-direct">
+      </button>`,
+    },
+    {
+      id: 'direct',
+      html: `<button class="method-btn method-btn-direct" id="method-direct">
         <span class="method-icon icon-direct">${ICON_DIRECT}</span>
         <span class="method-text">
           <span class="method-title">${t(locale, 'direct_payment')}</span>
           <span class="method-sub">${t(locale, 'direct_payment_desc')}</span>
         </span>
-      </button>
+      </button>`,
+    },
+  ]
+
+  const order = currentBranding?.walletOrder
+  if (order && order.length > 0) {
+    const sorted: WalletButton[] = []
+    for (const wid of order) {
+      const btn = all.find((b) => b.id === wid)
+      if (btn) sorted.push(btn)
+    }
+    // Add any remaining not in order
+    for (const btn of all) {
+      if (!sorted.includes(btn)) sorted.push(btn)
+    }
+    return sorted
+  }
+
+  return all
+}
+
+function renderMethodSelection(info: BackendPaymentInfo, _walletInfo: WalletInfo): string {
+  const locale = currentLocale
+  const buttons = buildWalletButtons(locale)
+
+  return `
+    ${buildPaymentInfoBlock(info)}
+    <div class="method-list">
+      ${buttons.map((b) => b.html).join('\n')}
     </div>
   `
 }
@@ -840,12 +902,36 @@ function attachBodyListeners(): void {
   body.querySelector('#back-btn')?.addEventListener('click', () => handlers.onBack?.())
 }
 
+function applyBrandingVars(): void {
+  if (!host || !currentBranding) return
+  const b = currentBranding
+  if (b.primaryColorStart) host.style.setProperty('--cp-primary-start', b.primaryColorStart)
+  if (b.primaryColorEnd) host.style.setProperty('--cp-primary-end', b.primaryColorEnd)
+  if (b.lightBg) host.style.setProperty('--cp-light-bg', b.lightBg)
+  if (b.lightText) host.style.setProperty('--cp-light-text', b.lightText)
+  if (b.darkBg) host.style.setProperty('--cp-dark-bg', b.darkBg)
+  if (b.darkText) host.style.setProperty('--cp-dark-text', b.darkText)
+  if (b.borderRadius !== undefined) host.style.setProperty('--cp-radius', `${b.borderRadius}px`)
+}
+
+function getLogoHtml(): string {
+  if (currentBranding?.logoDataUrl) {
+    return `<img src="${currentBranding.logoDataUrl}" alt="" />`
+  }
+  return 'C'
+}
+
+function getBrandName(): string {
+  return currentBranding?.brandName || 'Crypax'
+}
+
 export function createModal(config: ModalConfig): void {
   if (host) return
 
   currentLocale = config.locale
   currentTheme = config.theme
   currentConfig = config
+  currentBranding = config.branding || null
 
   host = document.createElement('div')
   host.id = '__crypax-modal__'
@@ -854,6 +940,8 @@ export function createModal(config: ModalConfig): void {
   const style = document.createElement('style')
   style.textContent = STYLES
   shadow.appendChild(style)
+
+  applyBrandingVars()
 
   document.body.appendChild(host)
 }
@@ -888,22 +976,26 @@ export function showModal(
 
   const wrapper = document.createElement('div')
   wrapper.className = `theme-wrapper ${themeClass}`
+  const brandName = getBrandName()
+  const logoHtml = getLogoHtml()
+  const hideFooter = currentBranding?.hideFooter === true
+
   wrapper.innerHTML = `
     <div class="overlay" id="overlay">
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Crypax Payment">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="${brandName} Payment">
         <div class="modal-header">
           <div class="modal-logo">
-            <div class="logo-icon">C</div>
-            <span class="logo-text">Crypax</span>
+            <div class="logo-icon">${logoHtml}</div>
+            <span class="logo-text">${brandName}</span>
           </div>
           <button class="close-btn" id="modal-close-btn" aria-label="${t(locale, 'close')}">✕</button>
         </div>
         <div class="modal-body">
           ${renderMethodSelection(info, walletInfo)}
         </div>
-        <div class="modal-footer">
+        ${hideFooter ? '' : `<div class="modal-footer">
           <span class="powered-link">${t(locale, 'powered_by')}</span>
-        </div>
+        </div>`}
       </div>
     </div>
   `
@@ -992,5 +1084,6 @@ export function destroyModal(): void {
     host = null
     shadow = null
     currentConfig = null
+    currentBranding = null
   }
 }

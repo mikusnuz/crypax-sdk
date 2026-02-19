@@ -22,6 +22,20 @@ export interface ResolvedConfig {
   nativeCurrency: { name: string; symbol: string; decimals: number }
 }
 
+export interface ModalBranding {
+  logoDataUrl?: string
+  brandName?: string
+  primaryColorStart?: string
+  primaryColorEnd?: string
+  lightBg?: string
+  lightText?: string
+  darkBg?: string
+  darkText?: string
+  walletOrder?: string[]
+  borderRadius?: number
+  hideFooter?: boolean
+}
+
 export interface BackendPaymentInfo {
   id: string
   amount: string
@@ -41,6 +55,7 @@ export interface BackendPaymentInfo {
   explorerUrl?: string
   symbol?: string
   decimals?: number
+  branding?: ModalBranding | null
 }
 
 export type PaymentStatus =
