@@ -14,7 +14,7 @@ export interface ResolvedServerConfig {
 
 export interface CreatePaymentParams {
   amount: string
-  recipientAddress: string
+  recipientAddress?: string
   chainId: number
   currency?: string
   orderId?: string
