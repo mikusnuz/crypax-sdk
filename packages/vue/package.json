@@ -1,6 +1,6 @@
 {
   "name": "@crypax/vue",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Crypax Vue SDK",
   "type": "module",
   "main": "./dist/index.cjs",

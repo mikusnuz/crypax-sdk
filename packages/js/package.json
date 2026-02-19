@@ -1,6 +1,6 @@
 {
   "name": "@crypax/js",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Crypax payment SDK for browsers",
   "type": "module",
   "main": "./dist/index.cjs",
