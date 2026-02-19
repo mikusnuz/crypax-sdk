@@ -57,7 +57,7 @@ export type PaymentStatus =
   | 'cancelled'
   | 'expired'
 
-export type PaymentMethod = 'pexus' | 'wallet' | 'direct'
+export type PaymentMethod = 'pexus' | 'metamask' | 'walletconnect' | 'coinbase' | 'phantom' | 'direct'
 
 export interface PaymentResult {
   status: 'confirmed' | 'cancelled' | 'expired' | 'failed'
@@ -68,7 +68,7 @@ export interface PaymentResult {
 }
 
 export interface WalletInfo {
-  type: 'pexus' | 'metamask' | 'other' | 'none'
+  type: 'pexus' | 'metamask' | 'coinbase' | 'phantom' | 'other' | 'none'
   address?: string
   chainId?: number
 }

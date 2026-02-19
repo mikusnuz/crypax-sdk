@@ -262,8 +262,13 @@ export class Crypax {
             }
             handleWalletPayment()
             break
-          case 'wallet':
+          case 'metamask':
+          case 'coinbase':
+          case 'phantom':
             handleWalletPayment()
+            break
+          case 'walletconnect':
+            handleDirectPayment()
             break
           case 'direct':
             handleDirectPayment()

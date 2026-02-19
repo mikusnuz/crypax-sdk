@@ -34,8 +34,31 @@ export function detectWallet(): WalletInfo {
   if (!provider) return { type: 'none' }
 
   if (provider.isPexus) return { type: 'pexus' }
+  if ((provider as any).isCoinbaseWallet) return { type: 'coinbase' }
+  if ((provider as any).isPhantom) return { type: 'phantom' }
   if (provider.isMetaMask) return { type: 'metamask' }
   return { type: 'other' }
+}
+
+export function detectAvailableWallets(): Set<string> {
+  const available = new Set<string>()
+  if (typeof window === 'undefined') return available
+  const w = window as unknown as WindowWithWallets
+
+  if (w.pexus?.ethereum || w.plumise?.ethereum || w.ethereum?.isPexus) available.add('pexus')
+
+  const provider = w.ethereum
+  if (provider) {
+    if (provider.isMetaMask) available.add('metamask')
+    if ((provider as any).isCoinbaseWallet) available.add('coinbase')
+    if ((provider as any).isPhantom) available.add('phantom')
+  }
+
+  if ((w as any).phantom?.ethereum) available.add('phantom')
+
+  if (provider && available.size === 0) available.add('other')
+
+  return available
 }
 
 export async function connectWallet(): Promise<string> {

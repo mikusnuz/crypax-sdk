@@ -2,6 +2,8 @@ import type { PaymentStatus, BackendPaymentInfo, WalletInfo, PaymentMethod } fro
 import type { Locale } from './i18n'
 import { t } from './i18n'
 import { generateQrSvg, buildEip681Uri, ensureWei, normalizeAmount } from './qr'
+import { detectAvailableWallets } from './wallet'
+import { ICON_PEXUS, ICON_METAMASK, ICON_WALLETCONNECT, ICON_COINBASE, ICON_PHANTOM, ICON_DIRECT } from './icons'
 
 interface ModalConfig {
   theme: 'light' | 'dark' | 'auto'
@@ -443,6 +445,11 @@ const STYLES = `
     flex-shrink: 0;
   }
 
+  .method-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
   .icon-pexus { background: rgba(255,255,255,0.2); }
 
   .light .icon-wallet { background: #e5e7eb; }
@@ -609,31 +616,55 @@ function buildPaymentInfoBlock(info: BackendPaymentInfo): string {
   return `<div class="payment-info">${rows.join('')}</div>`
 }
 
-function renderMethodSelection(info: BackendPaymentInfo, walletInfo: WalletInfo): string {
+function renderMethodSelection(info: BackendPaymentInfo, _walletInfo: WalletInfo): string {
   const locale = currentLocale
+  const available = detectAvailableWallets()
 
-  const hasPexus = walletInfo.type === 'pexus'
-  const hasWallet = walletInfo.type !== 'none'
+  const hasPexus = available.has('pexus')
+  const hasMetaMask = available.has('metamask')
+  const hasCoinbase = available.has('coinbase')
+  const hasPhantom = available.has('phantom')
 
   return `
     ${buildPaymentInfoBlock(info)}
     <div class="method-list">
-      <button class="method-btn method-btn-pexus" id="method-pexus" ${!hasPexus ? 'disabled' : ''}>
-        <span class="method-icon icon-pexus">🟣</span>
+      <button class="method-btn method-btn-pexus" id="method-pexus">
+        <span class="method-icon icon-pexus">${ICON_PEXUS}</span>
         <span class="method-text">
-          <span class="method-title">${t(locale, 'pay_with_pexus')}</span>
-          ${!hasPexus ? `<span class="method-sub">${t(locale, 'pexus_not_installed')}</span>` : ''}
+          <span class="method-title">${hasPexus ? t(locale, 'pay_with_pexus') : t(locale, 'install_pexus')}</span>
+          <span class="method-sub">${t(locale, 'pexus_desc')}</span>
         </span>
       </button>
-      <button class="method-btn method-btn-wallet" id="method-wallet" ${!hasWallet ? 'disabled' : ''}>
-        <span class="method-icon icon-wallet">🦊</span>
+      <button class="method-btn method-btn-wallet" id="method-metamask" ${!hasMetaMask ? 'disabled' : ''}>
+        <span class="method-icon icon-wallet">${ICON_METAMASK}</span>
         <span class="method-text">
-          <span class="method-title">${t(locale, 'wallet_payment')}</span>
-          ${!hasWallet ? `<span class="method-sub">${t(locale, 'wallet_not_detected')}</span>` : ''}
+          <span class="method-title">${t(locale, 'pay_with_metamask')}</span>
+          <span class="method-sub">${!hasMetaMask ? t(locale, 'wallet_not_installed') : t(locale, 'metamask_desc')}</span>
+        </span>
+      </button>
+      <button class="method-btn method-btn-wallet" id="method-walletconnect">
+        <span class="method-icon icon-wallet">${ICON_WALLETCONNECT}</span>
+        <span class="method-text">
+          <span class="method-title">${t(locale, 'pay_with_walletconnect')}</span>
+          <span class="method-sub">${t(locale, 'walletconnect_desc')}</span>
+        </span>
+      </button>
+      <button class="method-btn method-btn-wallet" id="method-coinbase" ${!hasCoinbase ? 'disabled' : ''}>
+        <span class="method-icon icon-wallet">${ICON_COINBASE}</span>
+        <span class="method-text">
+          <span class="method-title">${t(locale, 'pay_with_coinbase')}</span>
+          <span class="method-sub">${!hasCoinbase ? t(locale, 'wallet_not_installed') : t(locale, 'coinbase_desc')}</span>
+        </span>
+      </button>
+      <button class="method-btn method-btn-wallet" id="method-phantom" ${!hasPhantom ? 'disabled' : ''}>
+        <span class="method-icon icon-wallet">${ICON_PHANTOM}</span>
+        <span class="method-text">
+          <span class="method-title">${t(locale, 'pay_with_phantom')}</span>
+          <span class="method-sub">${!hasPhantom ? t(locale, 'wallet_not_installed') : t(locale, 'phantom_desc')}</span>
         </span>
       </button>
       <button class="method-btn method-btn-direct" id="method-direct">
-        <span class="method-icon icon-direct">📱</span>
+        <span class="method-icon icon-direct">${ICON_DIRECT}</span>
         <span class="method-text">
           <span class="method-title">${t(locale, 'direct_payment')}</span>
           <span class="method-sub">${t(locale, 'direct_payment_desc')}</span>
@@ -747,13 +778,12 @@ function attachBodyListeners(): void {
 
   // Method selection buttons
   body.querySelector('#method-pexus')?.addEventListener('click', () => handlers.onSelectMethod?.('pexus'))
-  body.querySelector('#method-wallet')?.addEventListener('click', () => handlers.onSelectMethod?.('wallet'))
+  body.querySelector('#method-metamask')?.addEventListener('click', () => handlers.onSelectMethod?.('metamask'))
+  body.querySelector('#method-walletconnect')?.addEventListener('click', () => handlers.onSelectMethod?.('walletconnect'))
+  body.querySelector('#method-coinbase')?.addEventListener('click', () => handlers.onSelectMethod?.('coinbase'))
+  body.querySelector('#method-phantom')?.addEventListener('click', () => handlers.onSelectMethod?.('phantom'))
   body.querySelector('#method-direct')?.addEventListener('click', () => handlers.onSelectMethod?.('direct'))
 
-  // Legacy buttons (for status screens)
-  body.querySelector('#pay-wallet-btn')?.addEventListener('click', () => handlers.onSelectMethod?.('pexus'))
-  body.querySelector('#install-pexus-btn')?.addEventListener('click', () => handlers.onSelectMethod?.('pexus'))
-  body.querySelector('#other-wallet-btn')?.addEventListener('click', () => handlers.onSelectMethod?.('wallet'))
   body.querySelector('#close-final-btn')?.addEventListener('click', () => handlers.onClose?.())
   body.querySelector('#retry-btn')?.addEventListener('click', () => handlers.onRetry?.())
 
