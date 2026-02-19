@@ -18,6 +18,17 @@
     "build": "tsup",
     "dev": "tsup --watch"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikusnuz/crypax-sdk.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/mikusnuz/crypax-sdk/tree/main/packages/react",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": ["crypax", "payment", "crypto", "react", "sdk"],
   "dependencies": {
     "@crypax/js": "workspace:*"
   },

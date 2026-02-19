@@ -18,6 +18,17 @@
     "build": "tsup",
     "dev": "tsup --watch"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikusnuz/crypax-sdk.git",
+    "directory": "packages/vue"
+  },
+  "homepage": "https://github.com/mikusnuz/crypax-sdk/tree/main/packages/vue",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": ["crypax", "payment", "crypto", "vue", "sdk"],
   "dependencies": {
     "@crypax/js": "workspace:*"
   },

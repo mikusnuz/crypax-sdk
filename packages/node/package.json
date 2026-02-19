@@ -18,6 +18,17 @@
     "build": "tsup",
     "dev": "tsup --watch"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikusnuz/crypax-sdk.git",
+    "directory": "packages/node"
+  },
+  "homepage": "https://github.com/mikusnuz/crypax-sdk/tree/main/packages/node",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": ["crypax", "payment", "crypto", "node", "server", "sdk"],
   "devDependencies": {
     "@types/node": "^22.0.0",
     "tsup": "^8.0.0",
