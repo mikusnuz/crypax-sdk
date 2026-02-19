@@ -737,21 +737,25 @@ function buildWalletButtons(locale: Locale): WalletButton[] {
     },
   ]
 
+  // Filter out hidden wallets
+  const hidden = currentBranding?.hiddenWallets || []
+  const visible = all.filter((b) => !hidden.includes(b.id))
+
   const order = currentBranding?.walletOrder
   if (order && order.length > 0) {
     const sorted: WalletButton[] = []
     for (const wid of order) {
-      const btn = all.find((b) => b.id === wid)
+      const btn = visible.find((b) => b.id === wid)
       if (btn) sorted.push(btn)
     }
     // Add any remaining not in order
-    for (const btn of all) {
+    for (const btn of visible) {
       if (!sorted.includes(btn)) sorted.push(btn)
     }
     return sorted
   }
 
-  return all
+  return visible
 }
 
 function renderMethodSelection(info: BackendPaymentInfo, _walletInfo: WalletInfo): string {

@@ -34,6 +34,7 @@ export interface ModalBranding {
   walletOrder?: string[]
   borderRadius?: number
   hideFooter?: boolean
+  hiddenWallets?: string[]
 }
 
 export interface BackendPaymentInfo {
