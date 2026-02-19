@@ -2,6 +2,12 @@
 
 # Crypax SDK
 
+[![@crypax/js](https://img.shields.io/badge/%40crypax%2Fjs-0.2.0-7c3aed)](./packages/js)
+[![@crypax/react](https://img.shields.io/badge/%40crypax%2Freact-0.2.0-7c3aed)](./packages/react)
+[![@crypax/vue](https://img.shields.io/badge/%40crypax%2Fvue-0.2.0-7c3aed)](./packages/vue)
+[![@crypax/node](https://img.shields.io/badge/%40crypax%2Fnode-0.2.0-7c3aed)](./packages/node)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
 Crypto payment gateway SDK for any EVM-compatible blockchain.
 
 ## Packages
@@ -18,22 +24,23 @@ Crypto payment gateway SDK for any EVM-compatible blockchain.
 Crypax follows the **Stripe PaymentIntent pattern**:
 
 ```
-┌─ Your Server ─┐     ┌─ Crypax API ─┐     ┌─ Blockchain ─┐
-│                │     │              │     │              │
-│ POST /payments ├────►│ Create       │     │              │
-│ (sk_live_xxx)  │◄────┤ clientSecret │     │              │
-│                │     │              │     │              │
-│ → clientSecret │     │              │     │              │
-│   to frontend  │     │              │     │              │
-└────────────────┘     └──────────────┘     └──────────────┘
-                                                    ▲
-┌─ Frontend ─────┐     ┌─ Crypax SDK ─┐            │
-│                │     │              │            │
-│ confirmPayment ├────►│ Show modal   │            │
-│ (clientSecret) │     │ Connect      │            │
-│                │     │ wallet  ─────┼────────────┘
-│                │◄────┤ Poll result  │  Send TX
-└────────────────┘     └──────────────┘
+┌────────────────┐     ┌────────────────┐     ┌────────────────┐
+│  Your Server   │     │   Crypax API   │     │   Blockchain   │
+│                │     │                │     │                │
+│ POST /payments ├────►│ Create         │     │                │
+│ (sk_live_xxx)  │◄────┤ clientSecret   │     │                │
+│                │     │                │     │                │
+│ → clientSecret │     │                │     │                │
+│   to frontend  │     │                │     │                │
+└────────────────┘     └────────────────┘     └────────────────┘
+                                                      ▲
+┌────────────────┐     ┌────────────────┐             │
+│    Frontend    │     │   Crypax SDK   │             │
+│                │     │                │             │
+│ confirmPayment ├────►│ Show modal     │             │
+│ (clientSecret) │     │ Connect wallet ├─────────────┘
+│                │◄────┤ Poll result    │    Send TX
+└────────────────┘     └────────────────┘
 ```
 
 1. **Server** creates a payment via `@crypax/node` → receives `clientSecret`

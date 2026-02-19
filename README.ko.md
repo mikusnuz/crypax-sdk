@@ -2,6 +2,12 @@
 
 # Crypax SDK
 
+[![@crypax/js](https://img.shields.io/badge/%40crypax%2Fjs-0.2.0-7c3aed)](./packages/js)
+[![@crypax/react](https://img.shields.io/badge/%40crypax%2Freact-0.2.0-7c3aed)](./packages/react)
+[![@crypax/vue](https://img.shields.io/badge/%40crypax%2Fvue-0.2.0-7c3aed)](./packages/vue)
+[![@crypax/node](https://img.shields.io/badge/%40crypax%2Fnode-0.2.0-7c3aed)](./packages/node)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
 모든 EVM 호환 블록체인을 지원하는 암호화폐 결제 게이트웨이 SDK입니다.
 
 ## 패키지
@@ -18,22 +24,23 @@
 Crypax는 **Stripe PaymentIntent 패턴**을 따릅니다.
 
 ```
-┌─ Your Server ─┐     ┌─ Crypax API ─┐     ┌─ Blockchain ─┐
-│                │     │              │     │              │
-│ POST /payments ├────►│ Create       │     │              │
-│ (sk_live_xxx)  │◄────┤ clientSecret │     │              │
-│                │     │              │     │              │
-│ → clientSecret │     │              │     │              │
-│   to frontend  │     │              │     │              │
-└────────────────┘     └──────────────┘     └──────────────┘
-                                                    ▲
-┌─ Frontend ─────┐     ┌─ Crypax SDK ─┐            │
-│                │     │              │            │
-│ confirmPayment ├────►│ Show modal   │            │
-│ (clientSecret) │     │ Connect      │            │
-│                │     │ wallet  ─────┼────────────┘
-│                │◄────┤ Poll result  │  Send TX
-└────────────────┘     └──────────────┘
+┌────────────────┐     ┌────────────────┐     ┌────────────────┐
+│  Your Server   │     │   Crypax API   │     │   Blockchain   │
+│                │     │                │     │                │
+│ POST /payments ├────►│ Create         │     │                │
+│ (sk_live_xxx)  │◄────┤ clientSecret   │     │                │
+│                │     │                │     │                │
+│ → clientSecret │     │                │     │                │
+│   to frontend  │     │                │     │                │
+└────────────────┘     └────────────────┘     └────────────────┘
+                                                      ▲
+┌────────────────┐     ┌────────────────┐             │
+│    Frontend    │     │   Crypax SDK   │             │
+│                │     │                │             │
+│ confirmPayment ├────►│ Show modal     │             │
+│ (clientSecret) │     │ Connect wallet ├─────────────┘
+│                │◄────┤ Poll result    │    Send TX
+└────────────────┘     └────────────────┘
 ```
 
 1. **서버**에서 `@crypax/node`로 결제를 생성하고 `clientSecret`을 받습니다.
