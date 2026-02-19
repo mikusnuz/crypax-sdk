@@ -2,10 +2,14 @@ import type { ResolvedConfig } from './types'
 
 export const DEFAULT_API_URL = 'https://api.crypax.io'
 
+/**
+ * Default chain configuration.
+ * Can be overridden via CrypaxConfig at initialization.
+ */
 export const DEFAULT_CHAIN = {
   chainId: 41956,
-  name: 'Plumise',
-  rpcUrl: 'https://node-1.plumise.com/rpc',
+  name: 'Plumise Mainnet',
+  rpcUrl: 'https://plug.plumise.com/rpc',
   explorerUrl: 'https://explorer.plumise.com',
   nativeCurrency: {
     name: 'PLM',

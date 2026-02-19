@@ -11,7 +11,7 @@ import { verifyPayment, verifyERC20Payment } from './verify'
 import { constructEvent, verifyWebhookSignature } from './webhooks'
 
 const DEFAULT_API_URL = 'https://api.crypax.io'
-const DEFAULT_RPC_URL = 'https://node-1.plumise.com/rpc'
+const DEFAULT_RPC_URL = 'https://plug.plumise.com/rpc'
 const DEFAULT_CHAIN_ID = 41956
 
 export class Crypax {
