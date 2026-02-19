@@ -2,10 +2,10 @@
 
 # Crypax SDK
 
-[![@crypax/js](https://img.shields.io/badge/%40crypax%2Fjs-0.2.0-7c3aed)](./packages/js)
-[![@crypax/react](https://img.shields.io/badge/%40crypax%2Freact-0.2.0-7c3aed)](./packages/react)
-[![@crypax/vue](https://img.shields.io/badge/%40crypax%2Fvue-0.2.0-7c3aed)](./packages/vue)
-[![@crypax/node](https://img.shields.io/badge/%40crypax%2Fnode-0.2.0-7c3aed)](./packages/node)
+[![@crypax/js](https://img.shields.io/badge/%40crypax%2Fjs-0.5.2-7c3aed)](./packages/js)
+[![@crypax/react](https://img.shields.io/badge/%40crypax%2Freact-0.5.1-7c3aed)](./packages/react)
+[![@crypax/vue](https://img.shields.io/badge/%40crypax%2Fvue-0.5.1-7c3aed)](./packages/vue)
+[![@crypax/node](https://img.shields.io/badge/%40crypax%2Fnode-0.5.1-7c3aed)](./packages/node)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 모든 EVM 호환 블록체인을 지원하는 암호화폐 결제 게이트웨이 SDK입니다.
