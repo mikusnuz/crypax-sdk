@@ -9,10 +9,51 @@ export function buildEip681Uri(address: string, amountWei: string, chainId: numb
  * Convert decimal amount to wei string
  */
 export function toWeiString(amount: string, decimals = 18): string {
+  if (isWeiLike(amount, decimals)) return amount
   const parts = amount.split('.')
   const whole = parts[0] || '0'
   const frac = (parts[1] || '').padEnd(decimals, '0').slice(0, decimals)
   return (BigInt(whole) * 10n ** BigInt(decimals) + BigInt(frac)).toString()
+}
+
+/**
+ * Convert wei string to human-readable amount
+ */
+export function fromWeiString(wei: string, decimals = 18): string {
+  const v = BigInt(wei)
+  const unit = 10n ** BigInt(decimals)
+  const whole = v / unit
+  const frac = v % unit
+  if (frac === 0n) return whole.toString()
+  const fracStr = frac.toString().padStart(decimals, '0').replace(/0+$/, '')
+  return `${whole}.${fracStr}`
+}
+
+/**
+ * Detect if an amount string looks like wei (no decimal point + unreasonably large).
+ * Threshold: if the number has more than `decimals - 3` digits (i.e. > ~10^15 for 18 decimals),
+ * it's almost certainly in wei.
+ */
+export function isWeiLike(amount: string, decimals = 18): boolean {
+  if (amount.includes('.')) return false
+  return amount.length > Math.max(decimals - 3, 6)
+}
+
+/**
+ * Normalize amount to human-readable PLM format.
+ * If it looks like wei, convert; otherwise return as-is.
+ */
+export function normalizeAmount(amount: string, decimals = 18): string {
+  if (isWeiLike(amount, decimals)) return fromWeiString(amount, decimals)
+  return amount
+}
+
+/**
+ * Ensure amount is in wei format. If already wei, return; otherwise convert.
+ */
+export function ensureWei(amount: string, decimals = 18): string {
+  if (isWeiLike(amount, decimals)) return amount
+  return toWeiString(amount, decimals)
 }
 
 /**

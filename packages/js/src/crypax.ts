@@ -18,6 +18,7 @@ import {
   sendNativeTransaction,
   sendERC20Transaction,
 } from './wallet'
+import { normalizeAmount } from './qr'
 import {
   createModal,
   showModal,
@@ -108,6 +109,7 @@ export class Crypax {
       chainName: cfg.chainName,
       currencySymbol: cfg.nativeCurrency.symbol,
       chainId: cfg.chainId,
+      decimals: cfg.nativeCurrency.decimals,
     })
 
     return new Promise<PaymentResult>((resolve) => {
@@ -143,10 +145,11 @@ export class Crypax {
           this.setStatus('awaiting_approval')
 
           let txHash: string
+          const displayAmount = normalizeAmount(paymentInfo.amount, cfg.nativeCurrency.decimals)
           if (paymentInfo.currency === 'native') {
             txHash = await sendNativeTransaction(
               paymentInfo.recipientAddress,
-              paymentInfo.amount,
+              displayAmount,
               address,
               cfg.nativeCurrency.decimals,
             )
@@ -154,7 +157,7 @@ export class Crypax {
             txHash = await sendERC20Transaction(
               paymentInfo.currency,
               paymentInfo.recipientAddress,
-              paymentInfo.amount,
+              displayAmount,
               address,
             )
           }

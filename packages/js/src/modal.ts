@@ -1,7 +1,7 @@
 import type { PaymentStatus, BackendPaymentInfo, WalletInfo, PaymentMethod } from './types'
 import type { Locale } from './i18n'
 import { t } from './i18n'
-import { generateQrSvg, buildEip681Uri, toWeiString } from './qr'
+import { generateQrSvg, buildEip681Uri, ensureWei, normalizeAmount } from './qr'
 
 interface ModalConfig {
   theme: 'light' | 'dark' | 'auto'
@@ -10,6 +10,7 @@ interface ModalConfig {
   chainName: string
   currencySymbol: string
   chainId: number
+  decimals: number
 }
 
 interface ModalHandlers {
@@ -574,11 +575,12 @@ function getThemeClass(theme: 'light' | 'dark' | 'auto'): 'light' | 'dark' {
   return theme
 }
 
-function formatAmount(amount: string, symbol: string): string {
-  const n = parseFloat(amount)
-  if (isNaN(n)) return `${amount} ${symbol}`
+function formatAmount(amount: string, symbol: string, decimals = 18): string {
+  const display = normalizeAmount(amount, decimals)
+  const n = parseFloat(display)
+  if (isNaN(n)) return `${display} ${symbol}`
   if (n === Math.floor(n)) return `${n} ${symbol}`
-  return `${amount} ${symbol}`
+  return `${display} ${symbol}`
 }
 
 function buildInfoRow(label: string, value: string, valueClass = ''): string {
@@ -595,7 +597,7 @@ function buildPaymentInfoBlock(info: BackendPaymentInfo): string {
     rows.push(`<div class="desc-text">${info.description}</div>`)
   }
 
-  rows.push(buildInfoRow(t(locale, 'amount'), formatAmount(info.amount, symbol), 'amount-value'))
+  rows.push(buildInfoRow(t(locale, 'amount'), formatAmount(info.amount, symbol, cfg.decimals), 'amount-value'))
   rows.push(
     buildInfoRow(
       t(locale, 'recipient'),
@@ -645,7 +647,7 @@ function renderDirectPayment(info: BackendPaymentInfo): string {
   const locale = currentLocale
   const cfg = currentConfig!
   const symbol = info.currency === 'native' ? cfg.currencySymbol : info.currency
-  const weiAmount = toWeiString(info.amount)
+  const weiAmount = ensureWei(info.amount, cfg.decimals)
   const uri = buildEip681Uri(info.recipientAddress, weiAmount, cfg.chainId)
   const qrSvg = generateQrSvg(uri, 180)
 
@@ -657,7 +659,7 @@ function renderDirectPayment(info: BackendPaymentInfo): string {
         <span class="addr-text">${info.recipientAddress}</span>
         <button class="copy-btn" id="copy-addr-btn">${t(locale, 'copy_address')}</button>
       </div>
-      ${buildInfoRow(t(locale, 'amount'), formatAmount(info.amount, symbol), 'amount-value')}
+      ${buildInfoRow(t(locale, 'amount'), formatAmount(info.amount, symbol, cfg.decimals), 'amount-value')}
       ${buildInfoRow(t(locale, 'network'), cfg.chainName)}
       <div class="waiting-badge">
         <span class="waiting-dot"></span>
