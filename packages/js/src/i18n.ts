@@ -46,6 +46,7 @@ const messages = {
     phantom_desc: '멀티체인 지갑',
     pexus_desc: '추천 · 원클릭 결제',
     wallet_not_installed: '미설치',
+    quote_expires: '환율',
   },
   en: {
     pay_with: 'Pay with {wallet}',
@@ -94,6 +95,7 @@ const messages = {
     phantom_desc: 'Multi-chain Wallet',
     pexus_desc: 'Recommended · One-click',
     wallet_not_installed: 'Not Installed',
+    quote_expires: 'Quote',
   },
 } as const
 

@@ -52,6 +52,20 @@ export class CrypaxApiClient {
     }
   }
 
+  async refreshQuote(paymentId: string, clientSecret: string): Promise<BackendPaymentInfo> {
+    const url = `${this.apiUrl}/v1/payments/${paymentId}/refresh-quote`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({ clientSecret }),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(`Failed to refresh quote (${res.status}): ${text}`)
+    }
+    return res.json() as Promise<BackendPaymentInfo>
+  }
+
   async pollPaymentStatus(
     paymentId: string,
     clientSecret: string,

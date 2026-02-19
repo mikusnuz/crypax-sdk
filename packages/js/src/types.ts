@@ -56,6 +56,14 @@ export interface BackendPaymentInfo {
   explorerUrl?: string
   symbol?: string
   decimals?: number
+  fiatCurrency?: string | null
+  fiatAmount?: string | null
+  cryptoAmount?: string | null
+  exchangeRate?: string | null
+  quoteExpiresAt?: string | null
+  tokenAddress?: string | null
+  tokenSymbol?: string | null
+  tokenDecimals?: number | null
   branding?: ModalBranding | null
 }
 

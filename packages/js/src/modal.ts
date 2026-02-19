@@ -14,6 +14,14 @@ interface ModalConfig {
   chainId: number
   decimals: number
   branding?: ModalBranding | null
+  fiatCurrency?: string | null
+  fiatAmount?: string | null
+  cryptoAmount?: string | null
+  exchangeRate?: string | null
+  quoteExpiresAt?: string | null
+  tokenAddress?: string | null
+  tokenSymbol?: string | null
+  tokenDecimals?: number | null
 }
 
 interface ModalHandlers {
@@ -31,6 +39,8 @@ let currentConfig: ModalConfig | null = null
 let currentBranding: ModalBranding | null = null
 let handlers: Partial<ModalHandlers> = {}
 let currentPaymentStatus: PaymentStatus | null = null
+let quoteTimerInterval: ReturnType<typeof setInterval> | null = null
+let onQuoteExpired: (() => void) | null = null
 
 const UNCLOSABLE_STATUSES: PaymentStatus[] = [
   'connecting', 'switching_chain', 'awaiting_approval', 'submitted', 'waiting_direct',
@@ -643,14 +653,34 @@ function buildInfoRow(label: string, value: string, valueClass = ''): string {
 function buildPaymentInfoBlock(info: BackendPaymentInfo): string {
   const locale = currentLocale
   const cfg = currentConfig!
-  const symbol = info.currency === 'native' ? cfg.currencySymbol : info.currency
+  const symbol = info.tokenSymbol || (info.currency === 'native' ? cfg.currencySymbol : info.currency)
+  const decimals = info.tokenDecimals ?? cfg.decimals
   const rows: string[] = []
 
   if (info.description) {
     rows.push(`<div class="desc-text">${info.description}</div>`)
   }
 
-  rows.push(buildInfoRow(t(locale, 'amount'), formatAmount(info.amount, symbol, cfg.decimals), 'amount-value'))
+  if (info.fiatCurrency && info.fiatAmount) {
+    const fiatSymbol = info.fiatCurrency === 'USD' ? '$' : '₩'
+    const fiatDisplay = info.fiatCurrency === 'USD'
+      ? `${fiatSymbol}${parseFloat(info.fiatAmount).toFixed(2)}`
+      : `${fiatSymbol}${parseInt(info.fiatAmount).toLocaleString()}`
+    const cryptoDisplay = info.cryptoAmount
+      ? `≈ ${formatAmount(info.cryptoAmount, symbol, decimals)}`
+      : ''
+
+    rows.push(`<div class="info-row">
+      <span class="info-label">${t(locale, 'amount')}</span>
+      <span class="info-value">
+        <span class="amount-value">${fiatDisplay}</span>
+        ${cryptoDisplay ? `<br/><span style="font-size:11px;opacity:0.6;">${cryptoDisplay}</span>` : ''}
+      </span>
+    </div>`)
+  } else {
+    rows.push(buildInfoRow(t(locale, 'amount'), formatAmount(info.amount, symbol, decimals), 'amount-value'))
+  }
+
   rows.push(
     buildInfoRow(
       t(locale, 'recipient'),
@@ -659,7 +689,52 @@ function buildPaymentInfoBlock(info: BackendPaymentInfo): string {
   )
   rows.push(buildInfoRow(t(locale, 'network'), cfg.chainName))
 
+  if (info.quoteExpiresAt) {
+    rows.push(`<div class="info-row" id="quote-timer-row">
+      <span class="info-label">${t(locale, 'quote_expires')}</span>
+      <span class="info-value" id="quote-countdown" style="font-size:12px;font-weight:600;">--</span>
+    </div>`)
+  }
+
   return `<div class="payment-info">${rows.join('')}</div>`
+}
+
+export function startQuoteTimer(expiresAt: string): void {
+  stopQuoteTimer()
+  const target = new Date(expiresAt).getTime()
+
+  const update = () => {
+    const el = shadow?.querySelector('#quote-countdown')
+    if (!el) { stopQuoteTimer(); return }
+
+    const remaining = Math.max(0, Math.floor((target - Date.now()) / 1000))
+    if (remaining <= 0) {
+      el.textContent = '0s'
+      el.setAttribute('style', 'font-size:12px;font-weight:600;color:#ef4444;')
+      stopQuoteTimer()
+      onQuoteExpired?.()
+      return
+    }
+
+    el.textContent = `${remaining}s`
+    if (remaining <= 5) {
+      el.setAttribute('style', 'font-size:12px;font-weight:600;color:#ef4444;')
+    }
+  }
+
+  update()
+  quoteTimerInterval = setInterval(update, 1000)
+}
+
+export function stopQuoteTimer(): void {
+  if (quoteTimerInterval) {
+    clearInterval(quoteTimerInterval)
+    quoteTimerInterval = null
+  }
+}
+
+export function setQuoteExpiredHandler(handler: (() => void) | null): void {
+  onQuoteExpired = handler
 }
 
 interface WalletButton {
@@ -955,6 +1030,9 @@ export function updateModalBody(info: BackendPaymentInfo, walletInfo: WalletInfo
   if (!body) return
   body.innerHTML = renderMethodSelection(info, walletInfo)
   attachBodyListeners()
+  if (info.quoteExpiresAt) {
+    startQuoteTimer(info.quoteExpiresAt)
+  }
 }
 
 export function showDirectPayment(info: BackendPaymentInfo): void {
@@ -1016,6 +1094,10 @@ export function showModal(
   })
 
   attachBodyListeners()
+
+  if (info.quoteExpiresAt) {
+    startQuoteTimer(info.quoteExpiresAt)
+  }
 }
 
 export function updateStatus(
@@ -1073,6 +1155,7 @@ export function updateStatus(
 
 export function hideModal(): void {
   currentPaymentStatus = null
+  stopQuoteTimer()
   const wrapper = shadow?.querySelector('.theme-wrapper') as HTMLElement | null
   if (wrapper) {
     wrapper.style.opacity = '0'
@@ -1082,6 +1165,7 @@ export function hideModal(): void {
 }
 
 export function destroyModal(): void {
+  stopQuoteTimer()
   hideModal()
   if (host) {
     host.remove()

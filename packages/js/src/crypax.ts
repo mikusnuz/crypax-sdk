@@ -27,6 +27,8 @@ import {
   destroyModal,
   showDirectPayment,
   updateModalBody,
+  setQuoteExpiredHandler,
+  startQuoteTimer,
 } from './modal'
 
 export class Crypax {
@@ -119,6 +121,14 @@ export class Crypax {
       chainId,
       decimals,
       branding: paymentInfo.branding,
+      fiatCurrency: paymentInfo.fiatCurrency,
+      fiatAmount: paymentInfo.fiatAmount,
+      cryptoAmount: paymentInfo.cryptoAmount,
+      exchangeRate: paymentInfo.exchangeRate,
+      quoteExpiresAt: paymentInfo.quoteExpiresAt,
+      tokenAddress: paymentInfo.tokenAddress,
+      tokenSymbol: paymentInfo.tokenSymbol,
+      tokenDecimals: paymentInfo.tokenDecimals,
     })
 
     return new Promise<PaymentResult>((resolve) => {
@@ -171,20 +181,26 @@ export class Crypax {
           this.setStatus('awaiting_approval')
 
           let txHash: string
-          const displayAmount = normalizeAmount(paymentInfo.amount, decimals)
-          if (paymentInfo.currency === 'native') {
+          const isNative = !paymentInfo.tokenAddress || paymentInfo.tokenAddress === 'native'
+          const tokenDec = paymentInfo.tokenDecimals ?? decimals
+          const payAmount = paymentInfo.cryptoAmount
+            ? normalizeAmount(paymentInfo.cryptoAmount, tokenDec)
+            : normalizeAmount(paymentInfo.amount, tokenDec)
+
+          if (isNative) {
             txHash = await sendNativeTransaction(
               paymentInfo.recipientAddress,
-              displayAmount,
+              payAmount,
               address,
-              decimals,
+              tokenDec,
             )
           } else {
             txHash = await sendERC20Transaction(
-              paymentInfo.currency,
+              paymentInfo.tokenAddress!,
               paymentInfo.recipientAddress,
-              displayAmount,
+              payAmount,
               address,
+              tokenDec,
             )
           }
 
@@ -300,6 +316,24 @@ export class Crypax {
           onBack: handleBack,
         })
       }
+
+      const refreshPaymentQuote = async () => {
+        try {
+          const refreshed = await this.api.refreshQuote(paymentId, clientSecret)
+          paymentInfo.cryptoAmount = refreshed.cryptoAmount
+          paymentInfo.exchangeRate = refreshed.exchangeRate
+          paymentInfo.quoteExpiresAt = refreshed.quoteExpiresAt
+          paymentInfo.amount = refreshed.amount ?? paymentInfo.amount
+          updateModalBody(paymentInfo, walletInfo)
+          if (paymentInfo.quoteExpiresAt) {
+            startQuoteTimer(paymentInfo.quoteExpiresAt)
+          }
+        } catch {
+          console.warn('[crypax] Quote refresh failed')
+        }
+      }
+
+      setQuoteExpiredHandler(refreshPaymentQuote)
 
       showModal(paymentInfo, walletInfo, {
         onSelectMethod: handleSelectMethod,
