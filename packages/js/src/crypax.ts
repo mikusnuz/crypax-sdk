@@ -101,15 +101,23 @@ export class Crypax {
     const walletInfo = detectWallet()
     this.emit('wallet_detected', walletInfo)
 
+    // Resolve chain info: prefer backend payment response, fallback to config
+    const chainId = paymentInfo.chainId ?? this.config.chainId
+    const chainName = paymentInfo.chainName ?? this.config.chainName
+    const rpcUrl = paymentInfo.rpcUrl ?? this.config.rpcUrl
+    const explorerUrl = paymentInfo.explorerUrl ?? this.config.explorerUrl
+    const symbol = paymentInfo.symbol ?? this.config.nativeCurrency.symbol
+    const decimals = paymentInfo.decimals ?? this.config.nativeCurrency.decimals
+
     const cfg = this.config
     createModal({
       theme: cfg.theme,
       locale: cfg.locale,
-      explorerUrl: cfg.explorerUrl,
-      chainName: cfg.chainName,
-      currencySymbol: cfg.nativeCurrency.symbol,
-      chainId: cfg.chainId,
-      decimals: cfg.nativeCurrency.decimals,
+      explorerUrl,
+      chainName,
+      currencySymbol: symbol,
+      chainId,
+      decimals,
     })
 
     return new Promise<PaymentResult>((resolve) => {
@@ -130,28 +138,34 @@ export class Crypax {
           const address = await connectWallet()
 
           const currentChainId = await getChainId()
-          if (currentChainId !== cfg.chainId) {
+          if (currentChainId !== chainId) {
             this.setStatus('switching_chain')
             await switchChain({
-              chainId: cfg.chainId,
-              name: cfg.chainName,
-              rpcUrl: cfg.rpcUrl,
-              explorerUrl: cfg.explorerUrl,
-              symbol: cfg.nativeCurrency.symbol,
-              decimals: cfg.nativeCurrency.decimals,
+              chainId,
+              name: chainName,
+              rpcUrl,
+              explorerUrl,
+              symbol,
+              decimals,
             })
+
+            // Re-verify chain after switch
+            const verifiedChainId = await getChainId()
+            if (verifiedChainId !== chainId) {
+              throw new Error(`Chain switch failed: expected ${chainId}, got ${verifiedChainId}`)
+            }
           }
 
           this.setStatus('awaiting_approval')
 
           let txHash: string
-          const displayAmount = normalizeAmount(paymentInfo.amount, cfg.nativeCurrency.decimals)
+          const displayAmount = normalizeAmount(paymentInfo.amount, decimals)
           if (paymentInfo.currency === 'native') {
             txHash = await sendNativeTransaction(
               paymentInfo.recipientAddress,
               displayAmount,
               address,
-              cfg.nativeCurrency.decimals,
+              decimals,
             )
           } else {
             txHash = await sendERC20Transaction(

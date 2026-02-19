@@ -35,6 +35,12 @@ export interface BackendPaymentInfo {
   blockNumber?: number | null
   confirmedAt?: string | null
   paymentMethod?: string
+  chainId?: number
+  chainName?: string
+  rpcUrl?: string
+  explorerUrl?: string
+  symbol?: string
+  decimals?: number
 }
 
 export type PaymentStatus =

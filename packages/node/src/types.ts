@@ -15,6 +15,7 @@ export interface ResolvedServerConfig {
 export interface CreatePaymentParams {
   amount: string
   recipientAddress: string
+  chainId: number
   currency?: string
   orderId?: string
   description?: string
@@ -40,6 +41,10 @@ export interface Payment {
   metadata?: Record<string, any> | null
   createdAt: string
   updatedAt: string
+  chainId?: number
+  chainName?: string
+  symbol?: string
+  decimals?: number
 }
 
 export interface PaymentList {
