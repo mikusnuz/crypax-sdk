@@ -121,13 +121,12 @@ export class Crypax {
     })
 
     return new Promise<PaymentResult>((resolve) => {
+      let pendingResult: PaymentResult | null = null
+
       const finish = (result: PaymentResult) => {
         if (result.status === 'confirmed') {
-          // Show success state for 3.5s before closing so user can clearly see the confirmation
-          setTimeout(() => {
-            hideModal()
-            resolve(result)
-          }, 3500)
+          // Don't auto-close — let user see the result and manually close
+          pendingResult = result
         } else {
           hideModal()
           resolve(result)
@@ -137,7 +136,11 @@ export class Crypax {
       const handleClose = () => {
         this.abortController?.abort()
         hideModal()
-        resolve({ status: 'cancelled', paymentId })
+        if (pendingResult) {
+          resolve(pendingResult)
+        } else {
+          resolve({ status: 'cancelled', paymentId })
+        }
       }
 
       const handleWalletPayment = async () => {

@@ -757,6 +757,9 @@ function renderConfirmed(txHash?: string, blockNumber?: number): string {
       <p class="status-title confirmed-title">${t(locale, 'confirmed')}</p>
       ${blockNumber ? `<p class="status-sub">Block #${blockNumber}</p>` : ''}
       ${txHash ? `<a class="tx-link" href="${cfg.explorerUrl}/tx/${txHash}" target="_blank" rel="noopener">${t(locale, 'view_tx')} ↗</a>` : ''}
+      <button class="btn btn-primary" id="close-final-btn" style="margin-top:12px;max-width:200px;">
+        ${t(locale, 'close')}
+      </button>
     </div>
   `
 }
@@ -954,6 +957,7 @@ export function updateStatus(
       break
     case 'confirmed':
       body.innerHTML = renderConfirmed(extra?.txHash, extra?.blockNumber)
+      body.querySelector('#close-final-btn')?.addEventListener('click', () => handlers.onClose?.())
       break
     case 'cancelled':
       body.innerHTML = renderCancelled()
