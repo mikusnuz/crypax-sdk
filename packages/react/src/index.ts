@@ -7,4 +7,6 @@ export type {
   PaymentResult,
   PaymentStatus,
   WalletInfo,
+  ChainInfo,
 } from '@crypax/js'
+export { CHAINS, PLUMISE_MAINNET, PLUMISE_TESTNET, SUPPORTED_CHAIN_IDS } from '@crypax/js'
