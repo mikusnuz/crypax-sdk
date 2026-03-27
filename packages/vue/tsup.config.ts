@@ -6,5 +6,5 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  external: ['vue'],
+  external: ['vue', '@crypax/js', '@crypax/shared'],
 })
