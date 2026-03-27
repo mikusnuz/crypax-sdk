@@ -1,0 +1,52 @@
+{
+  "name": "@crypax/svelte",
+  "version": "0.5.0",
+  "description": "Crypax Svelte SDK",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikusnuz/crypax-sdk.git",
+    "directory": "packages/svelte"
+  },
+  "homepage": "https://github.com/mikusnuz/crypax-sdk/tree/main/packages/svelte",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "crypax",
+    "payment",
+    "crypto",
+    "svelte",
+    "sdk"
+  ],
+  "dependencies": {
+    "@crypax/js": "workspace:*",
+    "@crypax/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "svelte": ">=4"
+  },
+  "devDependencies": {
+    "svelte": "^4.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
+  }
+}
