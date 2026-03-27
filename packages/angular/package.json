@@ -1,0 +1,52 @@
+{
+  "name": "@crypax/angular",
+  "version": "0.5.0",
+  "description": "Crypax Angular SDK",
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikusnuz/crypax-sdk.git",
+    "directory": "packages/angular"
+  },
+  "homepage": "https://github.com/mikusnuz/crypax-sdk/tree/main/packages/angular",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "crypax",
+    "payment",
+    "crypto",
+    "angular",
+    "sdk"
+  ],
+  "dependencies": {
+    "@crypax/js": "workspace:*",
+    "@crypax/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "@angular/core": ">=16",
+    "rxjs": ">=7"
+  },
+  "devDependencies": {
+    "@angular/core": "^17.0.0",
+    "rxjs": "^7.8.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
+  }
+}
