@@ -1,30 +1,48 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { WebhookEvent } from './types'
 
+function computeHmac(payload: string | Buffer, secret: string): string {
+  const hmac = createHmac('sha256', secret)
+  hmac.update(payload)
+  return hmac.digest('hex')
+}
+
+function safeCompare(a: string, b: string): boolean {
+  try {
+    const aBuf = Buffer.from(a)
+    const bBuf = Buffer.from(b)
+    if (aBuf.length !== bBuf.length) {
+      const padded = Buffer.alloc(bBuf.length, 0)
+      aBuf.copy(padded, 0, 0, Math.min(aBuf.length, padded.length))
+      timingSafeEqual(padded, bBuf)
+      return false
+    }
+    return timingSafeEqual(aBuf, bBuf)
+  } catch {
+    return false
+  }
+}
+
 export function verifyWebhookSignature(
   payload: string | Buffer,
   signature: string,
   secret: string,
 ): boolean {
-  const hmac = createHmac('sha256', secret)
-  hmac.update(typeof payload === 'string' ? payload : payload)
-  const digest = 'sha256=' + hmac.digest('hex')
+  const digest = computeHmac(payload, secret)
 
-  try {
-    const sigBuffer = Buffer.from(signature)
-    const digestBuffer = Buffer.from(digest)
-
-    if (sigBuffer.length !== digestBuffer.length) {
-      const padded = Buffer.alloc(digestBuffer.length, 0)
-      sigBuffer.copy(padded, 0, 0, Math.min(sigBuffer.length, padded.length))
-      timingSafeEqual(padded, digestBuffer)
-      return false
-    }
-
-    return timingSafeEqual(sigBuffer, digestBuffer)
-  } catch {
-    return false
+  // Support both v1= (new format) and sha256= (legacy format)
+  if (signature.startsWith('v1=')) {
+    const provided = signature.slice(3)
+    return safeCompare(provided, digest)
   }
+
+  if (signature.startsWith('sha256=')) {
+    const provided = signature.slice(7)
+    return safeCompare(provided, digest)
+  }
+
+  // Bare hex comparison as fallback
+  return safeCompare(signature, digest)
 }
 
 export function constructEvent(
@@ -40,7 +58,9 @@ export function constructEvent(
   const parsed = JSON.parse(bodyStr)
 
   return {
-    type: parsed.event || parsed.type,
-    data: parsed.data || parsed,
+    id: parsed.id ?? '',
+    type: parsed.event ?? parsed.type ?? '',
+    data: parsed.data ?? parsed,
+    createdAt: parsed.createdAt ?? new Date().toISOString(),
   }
 }
