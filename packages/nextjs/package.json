@@ -1,0 +1,55 @@
+{
+  "name": "@crypax/nextjs",
+  "version": "0.5.0",
+  "description": "Crypax SDK for Next.js App Router",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikusnuz/crypax-sdk.git",
+    "directory": "packages/nextjs"
+  },
+  "homepage": "https://github.com/mikusnuz/crypax-sdk/tree/main/packages/nextjs",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "crypax",
+    "payment",
+    "crypto",
+    "nextjs",
+    "react",
+    "sdk"
+  ],
+  "peerDependencies": {
+    "next": ">=14",
+    "react": ">=18"
+  },
+  "dependencies": {
+    "@crypax/react": "workspace:*",
+    "@crypax/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.0",
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0"
+  }
+}
