@@ -38,7 +38,8 @@
     "sdk"
   ],
   "dependencies": {
-    "@crypax/js": "workspace:*"
+    "@crypax/js": "workspace:*",
+    "@crypax/shared": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18"
