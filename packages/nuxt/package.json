@@ -1,0 +1,53 @@
+{
+  "name": "@crypax/nuxt",
+  "version": "0.5.0",
+  "description": "Crypax Nuxt 3 SDK",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikusnuz/crypax-sdk.git",
+    "directory": "packages/nuxt"
+  },
+  "homepage": "https://github.com/mikusnuz/crypax-sdk/tree/main/packages/nuxt",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "crypax",
+    "payment",
+    "crypto",
+    "nuxt",
+    "vue",
+    "sdk"
+  ],
+  "dependencies": {
+    "@crypax/vue": "workspace:*",
+    "@crypax/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": ">=3"
+  },
+  "devDependencies": {
+    "vue": "^3.5.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
+  }
+}
