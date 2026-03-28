@@ -134,6 +134,7 @@ export interface CreatePaymentParams {
   expiresInMinutes?: number
   fiatCurrency?: string
   fiatAmount?: number
+  qrMode?: boolean
 }
 
 export interface CreateCustomerParams {

@@ -8,6 +8,7 @@ export interface CrypaxConfig {
   chainName?: string
   explorerUrl?: string
   nativeCurrency?: { name: string; symbol: string; decimals: number }
+  mode?: 'wallet' | 'qr'
 }
 
 export interface ResolvedConfig {
@@ -20,6 +21,7 @@ export interface ResolvedConfig {
   chainName: string
   explorerUrl: string
   nativeCurrency: { name: string; symbol: string; decimals: number }
+  mode?: 'wallet' | 'qr'
 }
 
 export interface ModalBranding {

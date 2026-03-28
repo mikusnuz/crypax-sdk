@@ -341,6 +341,10 @@ export class Crypax {
         onRetry: handleRetry,
         onBack: handleBack,
       })
+
+      if (this.config.mode === 'qr') {
+        handleDirectPayment()
+      }
     })
   }
 
