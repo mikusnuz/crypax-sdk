@@ -1,6 +1,6 @@
 {
   "name": "@crypax/nuxt",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Crypax Nuxt 3 SDK",
   "type": "module",
   "main": "./dist/index.cjs",
